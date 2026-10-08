@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Чернильница — писательский блокнот</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#26386a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Чернильница">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=PT+Serif&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#efe6d0;--ink:#231c14;--mut:#7d6f5a;--ac:#26386a;--pg:#fbf7ea;--sh:0 10px 30px #3a2a1a2e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1a1611;--ink:#eadfca;--mut:#9c8d76;--pg:#2a231b;--ac:#9fb4ee;--sh:0 10px 30px #0009}}
+:root[data-theme=dark]{--bg:#1a1611;--ink:#eadfca;--mut:#9c8d76;--pg:#2a231b;--ac:#9fb4ee;--sh:0 10px 30px #0009}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"PT Serif",Georgia,serif;display:flex;justify-content:center}
+main{width:100%;max-width:460px;min-height:100%;padding:28px 24px 40px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.icon{width:96px;height:96px;border-radius:22px;box-shadow:var(--sh);margin-top:10px}
+h1{font-family:"Lora",serif;font-weight:600;font-size:30px;margin:18px 0 4px}
+.tag{color:var(--mut);font-size:16px;margin:0 0 26px;line-height:1.5}
+.feat{list-style:none;padding:0;margin:0 0 30px;width:100%;text-align:left;display:flex;flex-direction:column;gap:10px}
+.feat li{background:var(--pg);border-radius:12px;padding:12px 16px;box-shadow:var(--sh);font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.feat span{flex:none}
+#go{width:100%;background:var(--ac);color:var(--bg);border:0;border-radius:14px;padding:16px;font-size:17px;font-family:inherit;font-weight:700;box-shadow:var(--sh);cursor:pointer}
+#go:active{transform:scale(.98)}
+#open{margin-top:12px;color:var(--ac);text-decoration:underline;font-size:15px;background:none;border:0;font-family:inherit;cursor:pointer;padding:6px}
+#steps{margin-top:20px;width:100%;background:var(--pg);border-radius:14px;padding:16px 18px;box-shadow:var(--sh);text-align:left;font-size:15px;line-height:1.6;display:none}
+#steps.on{display:block}
+#steps ol{margin:8px 0 0;padding-left:20px}
+#steps b{color:var(--ac)}
+#note{margin-top:16px;font-size:13px;color:var(--mut)}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ac);color:var(--bg);padding:12px 16px;border-radius:12px;text-align:center;font-size:14px;transform:translateY(140%);transition:transform .35s}
+#toast.on{transform:none}
+</style></head><body>
+<main>
+<img class="icon" src="icon-192.png" alt="">
+<h1>Чернильница</h1>
+<p class="tag">Личный писательский блокнот.<br>Пиши книги с ощущением настоящей бумаги.</p>
+<ul class="feat">
+<li><span>📖</span>Библиотека своих произведений, любой жанр</li>
+<li><span>🪶</span>Страницы, перелистывание и автосохранение</li>
+<li><span>✒️</span>Помощник проверяет орфографию и пунктуацию</li>
+</ul>
+<button id="go">Установить на главный экран</button>
+<button id="open">Открыть без установки →</button>
+<div id="steps"></div>
+<p id="note"></p>
+</main>
+<div id="toast">Готово! Чернильница — у тебя на главном экране.</div>
+<script>
+const $=s=>document.querySelector(s);
+const ua=navigator.userAgent;
+const isIOS=/iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+const isAndroid=/Android/.test(ua);
+const standalone=window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+let dp=null;
+
+if('serviceWorker'in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+$('#open').onclick=()=>location.href='chernilnitsa.html';
+
+if(standalone){
+  $('#go').textContent='Открыть Чернильницу';
+  $('#go').onclick=()=>location.href='chernilnitsa.html';
+  $('#open').style.display='none';
+} else {
+  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); dp=e; });
+
+  $('#go').onclick=async ()=>{
+    if(dp){
+      dp.prompt();
+      const {outcome}=await dp.userChoice;
+      dp=null;
+      if(outcome==='accepted'){ $('#toast').classList.add('on'); setTimeout(()=>$('#toast').classList.remove('on'),3500); }
+      return;
+    }
+    showSteps();
+  };
+
+  function showSteps(){
+    const st=$('#steps'); st.classList.add('on');
+    if(isIOS){
+      st.innerHTML='Установка на iPhone/iPad:<ol><li>Нажми кнопку <b>«Поделиться»</b> внизу Safari (квадрат со стрелкой вверх)</li><li>Выбери <b>«На экран “Домой”»</b></li><li>Нажми <b>«Добавить»</b></li></ol>';
+    } else if(isAndroid){
+      st.innerHTML='Установка на Android:<ol><li>Открой меню браузера <b>⋮</b> в правом верхнем углу</li><li>Выбери <b>«Добавить на главный экран»</b> (или «Установить приложение»)</li><li>Подтверди добавление</li></ol>';
+    } else {
+      st.innerHTML='Установка на компьютере:<ol><li>Найди значок установки <b>⊕</b> в адресной строке браузера</li><li>Нажми его и подтверди установку</li></ol>Либо просто открой блокнот по кнопке ниже — он прекрасно работает и в обычной вкладке.';
+    }
+  }
+}
+</script>
+</body></html>
